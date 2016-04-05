@@ -1,0 +1,85 @@
+/*
+Run/Execute
+java -jar build\libs\REST-WS.jar
+java -cp build\classes\main\ com.jersey.rest.TestClient
+
+*/
+apply plugin:'java'
+
+repositories
+{
+	mavenCentral()
+	mavenLocal()
+}
+
+dependencies
+{
+	compile 'org.apache.commons:commons-lang3:3.3.2'
+	//compile group:"org.apache.commons", name:"commons-lang3", version:"3.3.2"
+}
+task (runClient, dependsOn: 'classes', type: JavaExec) {
+	main = 'com.jersey.rest.TestClient'
+	// * this plugin is bundled into gradle. */
+	classpath = sourceSets.main.runtimeClasspath
+	systemProperty 'simple.message', 'Hello '
+}
+
+defaultTasks 'runClient'
+
+//task jar (type: Jar) {}
+println configurations.compile
+jar 
+{
+	from configurations.compile.collect {entry -> zipTree entry}  // to zip the expanded jar file content of the commons-lang3.jar into the user jar
+	//from configurations.compile.collect {zipTree it} # same as above.
+	//from configurations.compile.collect {fileTree("somedir")}
+	//from configurations.compile  // to add the entire jar file(s) from compile configuration
+	
+	manifest.attributes 'Main-Class': 'com.jersey.rest.TestClient'
+	//manifest.attributes 'Class-Path': 'commons-lang3-3.3.2.jar'
+}
+task hello(group: 'greeting', description:'greet you.')
+task hello1{
+	group  'greeting1'
+	description 'greet you1.'
+	
+	// configuration phase
+	println 'configuration phase: hello'
+	ext.greeting = 'Hey, how\'s it going?'
+	
+	// execution phase
+	doLast {println 'execution phase : Hello !'}
+	doFirst {println 'first hello'}
+	doLast {println "execution phase : Hello ! $greeting"}
+}
+
+task run(type: JavaExec, dependsOn: classes){
+	main 'com.jersey.rest.TestClient'
+	classpath sourceSets.main.runtimeClasspath
+	args 'Hello Worlddd'
+}
+
+task runJar(type: Exec, dependsOn: jar){
+	executable 'java'
+	args '-jar', "$jar.archivePath", 'Hello World'
+}
+
+task hello2{
+	onlyIf { false }
+	println 'Hello from the configuration phase of hello2 task'
+} << {
+	println 'Hello!'
+}
+hello2.enabled = false
+
+task writeGreeting {
+	onlyIf { !file('greeting.txt').text.equals('Hello, fellow citizen!')}
+	} << {
+	file('greeting.txt').text = 'Hello, fellow citizen!'
+}
+
+task writeGreeting1 {
+	outputs.file file('greeting1.txt')
+	} << {
+	file('greeting1.txt').text = 'Hello, fellow citizen!'
+}
